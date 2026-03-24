@@ -13,7 +13,7 @@ export interface ConstraintStore<K = string, V = unknown> {
 export interface ConstraintStrategy<T = string> {
   name: string;
   mustMatchWhenDerived?: boolean;
-  storage(): ConstraintStore<T, Handler>;
+  storage(): ConstraintStore<T, unknown>;
   validate?(value: unknown): void;
   deriveConstraint?(req: Request): T | Promise<T>;
   isCustom?: boolean;

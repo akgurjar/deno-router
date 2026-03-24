@@ -51,7 +51,13 @@ import {
   trimLastSlash,
   trimRegExpStartAndEnd,
 } from "./lib/utils.ts";
-import { Handle } from "./lib/handler-storage.ts";
+
+export interface FindResult<T = unknown> {
+  handler: Handler;
+  store: unknown;
+  params: Record<string, T>;
+  searchParams?: unknown;
+}
 
 const FULL_PATH_REGEXP = /^https?:\/\/.*?\//;
 const OPTIONAL_PARAM_REGEXP = /(\/:[^/()]*?)\?(\/?)/;
@@ -66,7 +72,7 @@ if (!isRegexSafe(OPTIONAL_PARAM_REGEXP)) {
 
 const HTTP_METHODS = Object.values(METHOD);
 
-export default class MyRouter implements Router.HttpMethods {
+export default class MyRouter {
   readonly #config: Config;
   readonly #routes: Route[] = [];
   #trees: Record<string, StaticNode> = {};
@@ -602,7 +608,7 @@ export default class MyRouter implements Router.HttpMethods {
   }
 
   async callHandler(
-    handle: Handle | null,
+    handle: FindResult<string> | null,
     ctx: Context,
   ) {
     if (!handle) {
@@ -678,7 +684,7 @@ export default class MyRouter implements Router.HttpMethods {
             store: handle.store,
             params: handle._createParamsObject(params),
             searchParams: this.#config.querystringParser(querystring),
-          } satisfies Handle;
+          } as unknown as FindResult<string>;
         }
       }
 
@@ -780,7 +786,7 @@ export default class MyRouter implements Router.HttpMethods {
       handler: onBadUrl,
       params: {},
       store: null,
-    };
+    } as unknown as FindResult<string>;
   }
   //   prettyPrint(options: Router.RouteOptions = {}) {
   //     const method = options.method;

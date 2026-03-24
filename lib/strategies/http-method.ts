@@ -15,6 +15,6 @@ export default {
     };
   },
   /* c8 ignore next 1 */
-  deriveConstraint: (ctx) => ctx.req.method,
+  deriveConstraint: (req) => req.method,
   mustMatchWhenDerived: true,
 } satisfies ConstraintStrategy;

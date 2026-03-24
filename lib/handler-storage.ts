@@ -72,7 +72,7 @@ export default class HandlerStorage {
     );
 
     if (!isMergedTree) {
-      this._compileGetHandlerMatchingConstraints(constrainer, constraints);
+      this._compileGetHandlerMatchingConstraints(constrainer);
     }
   }
 
@@ -94,17 +94,17 @@ export default class HandlerStorage {
   }
 
   // Builds a store object that maps from constraint values to a bitmap of handler indexes which pass the constraint for a value
-  // So for a host constraint, this might look like { "fastify.io": 0b0010, "google.ca": 0b0101 }, meaning the 3rd handler is constrainted to fastify.io, and the 2nd and 4th handlers are constrained to google.ca.
+  // So for a host constraint, this might look like { "jsr.io": 0b0010, "google.ca": 0b0101 }, meaning the 3rd handler is constrainted to jsr.io, and the 2nd and 4th handlers are constrained to google.ca.
   // The store's implementation comes from the strategies provided to the Router.
   _buildConstraintStore(
-    store: ConstraintStore<string, number>,
+    store: ConstraintStore<string, unknown>,
     constraint: string,
   ) {
     for (let i = 0; i < this.handles.length; i++) {
       const handle = this.handles[i];
       const constraintValue = handle.constraints[constraint] as string;
       if (constraintValue !== undefined) {
-        let indexes = store.get(constraintValue) || 0;
+        let indexes = (store.get(constraintValue) as number) || 0;
         indexes |= 1 << i; // set the i-th bit for the mask because this handler is constrained by this value https://stackoverflow.com/questions/1436438/how-do-you-set-clear-and-toggle-a-single-bit-in-javascrip
         store.set(constraintValue, indexes);
       }
@@ -186,7 +186,7 @@ export default class HandlerStorage {
     }
 
     // Return the highest set bit index in the candidates bitmask.
-    lines.push("return this.handlers[31 - Math.clz32(candidates)]");
+    lines.push("return this.handles[31 - Math.clz32(candidates)]");
 
     this.#getHandlerMatchingConstraints = new Function(
       "derivedConstraints",
