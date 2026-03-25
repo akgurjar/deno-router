@@ -1,21 +1,16 @@
-// @ts-nocheck
-// 'use strict'
 
-/* eslint no-extend-native: off */
-
-import { assert, assertEquals, assertThrows, assertMatch, assertNotEquals, fail } from '@std/assert';
-import FindMyWay from '../index.ts';
+import Router from '../mod.ts';
 
 // Something could extend the Array prototype
-Array.prototype.test = null;
+(Array.prototype as any).test = null;
 
-Deno.test('for-in-loop', async () => {
-  FindMyWay();
+Deno.test('for-in-loop', () => {
+  new Router();
 });
 
-Deno.test('ignore inherited constraint keys', async () => {
-  const findMyWay = FindMyWay();
+Deno.test('ignore inherited constraint keys', () => {
+  const router = new Router();
   const constraints = Object.create({ tap: true });
 
-  findMyWay.on('GET', '/test', { constraints }, () => {});
+  router.on('GET', '/test', { constraints }, () => {});
 });

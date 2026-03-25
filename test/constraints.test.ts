@@ -1,161 +1,138 @@
-// @ts-nocheck
-// 'use strict'
 
 import {
   assert,
-  assertEquals,
-  assertMatch,
-  assertNotEquals,
-  assertThrows,
-  fail,
+  assertEquals
 } from "@std/assert";
-import { deepEqual } from "node:assert";
-import FindMyWay from "../index.ts";
+import Router from "../mod.ts";
 const alpha = () => {};
 const beta = () => {};
 const gamma = () => {};
 
-Deno.test("A route could support multiple host constraints while versioned", async () => {
-  // t.plan()
+Deno.test("A route could support multiple host constraints while versioned", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  findMyWay.on("GET", "/", {
+  router.on("GET", "/", {
     constraints: { host: "jsr.io", version: "1.1.0" },
   }, beta);
-  findMyWay.on("GET", "/", {
+  router.on("GET", "/", {
     constraints: { host: "jsr.io", version: "2.1.0" },
   }, gamma);
 
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "1.x" }).handler,
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "1.x" })?.handler,
     beta,
   );
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "1.1.x" }).handler,
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "1.1.x" })?.handler,
     beta,
   );
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "2.x" }).handler,
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "2.x" })?.handler,
     gamma,
   );
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "2.1.x" }).handler,
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "2.1.x" })?.handler,
     gamma,
   );
-  assert(!findMyWay.find("GET", "/", { host: "jsr.io", version: "3.x" }));
+  assert(!router.find("GET", "/", { host: "jsr.io", version: "3.x" }));
   assert(
-    !findMyWay.find("GET", "/", { host: "something-else.io", version: "1.x" }),
+    !router.find("GET", "/", { host: "something-else.io", version: "1.x" }),
   );
 });
 
-Deno.test("Constrained routes are matched before unconstrainted routes when the constrained route is added last", async () => {
-  // t.plan()
+Deno.test("Constrained routes are matched before unconstrainted routes when the constrained route is added last", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  findMyWay.on("GET", "/", {}, alpha);
-  findMyWay.on("GET", "/", { constraints: { host: "jsr.io" } }, beta);
+  router.on("GET", "/", {}, alpha);
+  router.on("GET", "/", { constraints: { host: "jsr.io" } }, beta);
 
-  deepEqual(findMyWay.find("GET", "/", {}).handler, alpha);
-  deepEqual(findMyWay.find("GET", "/", { host: "jsr.io" }).handler, beta);
-  deepEqual(findMyWay.find("GET", "/", { host: "example.com" }).handler, alpha);
+  assertEquals(router.find("GET", "/", {})?.handler, alpha);
+  assertEquals(router.find("GET", "/", { host: "jsr.io" })?.handler, beta);
+  assertEquals(router.find("GET", "/", { host: "example.com" })?.handler, alpha);
 });
 
-Deno.test("Constrained routes are matched before unconstrainted routes when the constrained route is added first", async () => {
-  // t.plan()
+Deno.test("Constrained routes are matched before unconstrainted routes when the constrained route is added first", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  findMyWay.on("GET", "/", { constraints: { host: "jsr.io" } }, beta);
-  findMyWay.on("GET", "/", {}, alpha);
+  router.on("GET", "/", { constraints: { host: "jsr.io" } }, beta);
+  router.on("GET", "/", {}, alpha);
 
-  deepEqual(findMyWay.find("GET", "/", {}).handler, alpha);
-  deepEqual(findMyWay.find("GET", "/", { host: "jsr.io" }).handler, beta);
-  deepEqual(findMyWay.find("GET", "/", { host: "example.com" }).handler, alpha);
+  assertEquals(router.find("GET", "/", {})?.handler, alpha);
+  assertEquals(router.find("GET", "/", { host: "jsr.io" })?.handler, beta);
+  assertEquals(router.find("GET", "/", { host: "example.com" })?.handler, alpha);
 });
 
-Deno.test("Routes with multiple constraints are matched before routes with one constraint when the doubly-constrained route is added last", async () => {
-  // t.plan()
+Deno.test("Routes with multiple constraints are matched before routes with one constraint when the doubly-constrained route is added last", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  findMyWay.on("GET", "/", { constraints: { host: "jsr.io" } }, alpha);
-  findMyWay.on("GET", "/", {
+  router.on("GET", "/", { constraints: { host: "jsr.io" } }, alpha);
+  router.on("GET", "/", {
     constraints: { host: "jsr.io", version: "1.0.0" },
   }, beta);
 
-  deepEqual(findMyWay.find("GET", "/", { host: "jsr.io" }).handler, alpha);
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "1.0.0" }).handler,
+  assertEquals(router.find("GET", "/", { host: "jsr.io" })?.handler, alpha);
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "1.0.0" })?.handler,
     beta,
   );
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "2.0.0" }),
-    null,
-  );
+  assert(!router.find("GET", "/", { host: "jsr.io", version: "2.0.0" }));
 });
 
-Deno.test("Routes with multiple constraints are matched before routes with one constraint when the doubly-constrained route is added first", async () => {
-  // t.plan()
+Deno.test("Routes with multiple constraints are matched before routes with one constraint when the doubly-constrained route is added first", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  findMyWay.on("GET", "/", {
+  router.on("GET", "/", {
     constraints: { host: "jsr.io", version: "1.0.0" },
   }, beta);
-  findMyWay.on("GET", "/", { constraints: { host: "jsr.io" } }, alpha);
+  router.on("GET", "/", { constraints: { host: "jsr.io" } }, alpha);
 
-  deepEqual(findMyWay.find("GET", "/", { host: "jsr.io" }).handler, alpha);
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "1.0.0" }).handler,
+  assertEquals(router.find("GET", "/", { host: "jsr.io" })?.handler, alpha);
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "1.0.0" })?.handler,
     beta,
   );
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "2.0.0" }),
-    null,
-  );
+  assert(!router.find("GET", "/", { host: "jsr.io", version: "2.0.0" }));
 });
 
-Deno.test("Routes with multiple constraints are matched before routes with one constraint before unconstrained routes", async () => {
-  // t.plan()
+Deno.test("Routes with multiple constraints are matched before routes with one constraint before unconstrained routes", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  findMyWay.on("GET", "/", {
+  router.on("GET", "/", {
     constraints: { host: "jsr.io", version: "1.0.0" },
   }, beta);
-  findMyWay.on("GET", "/", { constraints: { host: "jsr.io" } }, alpha);
-  findMyWay.on("GET", "/", { constraints: {} }, gamma);
+  router.on("GET", "/", { constraints: { host: "jsr.io" } }, alpha);
+  router.on("GET", "/", { constraints: {} }, gamma);
 
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "1.0.0" }).handler,
+  assertEquals(
+    router.find("GET", "/", { host: "jsr.io", version: "1.0.0" })?.handler,
     beta,
   );
-  deepEqual(
-    findMyWay.find("GET", "/", { host: "jsr.io", version: "2.0.0" }),
-    null,
-  );
-  deepEqual(findMyWay.find("GET", "/", { host: "example.io" }).handler, gamma);
+  assert(!router.find("GET", "/", { host: "jsr.io", version: "2.0.0" }));
+  assertEquals(router.find("GET", "/", { host: "example.io" })?.handler, gamma);
 });
 
-Deno.test("Has constraint strategy method test", async () => {
-  // t.plan()
+Deno.test("Has constraint strategy method test", () => {
 
-  const findMyWay = FindMyWay();
+  const router = new Router();
 
-  deepEqual(findMyWay.hasConstraintStrategy("version"), false);
-  deepEqual(findMyWay.hasConstraintStrategy("host"), false);
+  assertEquals(router.hasConstraintStrategy("version"), false);
+  assertEquals(router.hasConstraintStrategy("host"), false);
 
-  findMyWay.on("GET", "/", { constraints: { host: "jsr.io" } }, () => {});
+  router.on("GET", "/", { constraints: { host: "jsr.io" } }, () => {});
 
-  deepEqual(findMyWay.hasConstraintStrategy("version"), false);
-  deepEqual(findMyWay.hasConstraintStrategy("host"), true);
+  assertEquals(router.hasConstraintStrategy("version"), false);
+  assertEquals(router.hasConstraintStrategy("host"), true);
 
-  findMyWay.on("GET", "/", {
+  router.on("GET", "/", {
     constraints: { host: "jsr.io", version: "1.0.0" },
   }, () => {});
 
-  deepEqual(findMyWay.hasConstraintStrategy("version"), true);
-  deepEqual(findMyWay.hasConstraintStrategy("host"), true);
+  assertEquals(router.hasConstraintStrategy("version"), true);
+  assertEquals(router.hasConstraintStrategy("host"), true);
 });

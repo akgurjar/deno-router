@@ -23,9 +23,8 @@
     '~': 126 - ~
 */
 
-import { assert } from "@std/assert";
+import { assert, equal } from "@std/assert";
 import isRegexSafe from "safe-regex2";
-import deepEqual from "fast-deep-equal";
 import { METHOD, type Method } from "@std/http/unstable-method";
 // import { prettyPrintTree } from "./lib/pretty-print.ts";
 import {
@@ -41,7 +40,7 @@ import {
 import Constrainer from "./lib/constrainer.ts";
 // import httpMethodStrategy from "./lib/strategies/http-method.ts";
 import { safeDecodeURI, safeDecodeURIComponent } from "./lib/url-sanitizer.ts";
-import type * as Router from "./types.d.ts";
+import type * as TRouter from "./types.d.ts";
 import { Context } from "./lib/context.ts";
 import { Config } from "./lib/config.ts";
 import {
@@ -72,18 +71,30 @@ if (!isRegexSafe(OPTIONAL_PARAM_REGEXP)) {
 
 const HTTP_METHODS = Object.values(METHOD);
 
-export default class MyRouter {
+export default class Router {
   readonly #config: Config;
+  get config() {
+    return this.#config;
+  }
   readonly #routes: Route[] = [];
+  get routes() {
+    return this.#routes;
+  }
   #trees: Record<string, StaticNode> = {};
+  get trees() {
+    return this.#trees;
+  }
   readonly #constrainer: Constrainer;
+  get constrainer() {
+    return this.#constrainer;
+  }
   constructor(config?: Partial<Config>) {
     this.#config = new Config(config);
     this.#constrainer = new Constrainer(this.#config.constraints);
   }
-  on(...args: Router.OnArgs) {
+  on(...args: TRouter.OnArgs) {
     let [method, path, arg1, arg2, arg3] = args;
-    let opts: Router.RouteOptions = {};
+    let opts: TRouter.RouteOptions = {};
     let handler: Handler;
     let store: unknown;
     if (typeof arg1 === "function") {
@@ -148,7 +159,7 @@ export default class MyRouter {
   #on(
     method: Method,
     path: string,
-    opts: Router.RouteOptions,
+    opts: TRouter.RouteOptions,
     handler: Handler,
     store: unknown,
     _route?: string,
@@ -322,7 +333,7 @@ export default class MyRouter {
       if (
         existRoute.method === method &&
         existRoute.pattern === pattern &&
-        deepEqual(routeConstraints, constraints)
+        equal(routeConstraints, constraints)
       ) {
         throw new Error(
           `Method '${method}' already declared for route '${pattern}' with constraints '${
@@ -344,11 +355,15 @@ export default class MyRouter {
     this.#routes.push(route);
     currentNode.addRoute(route, this.#constrainer);
   }
-  hasRoute(method: Method, path: string, constraints: Router.Constraints) {
+  hasRoute(method: Method, path: string, constraints?: TRouter.Constraints) {
     const route = this.findNode(method, path, constraints);
     return route !== null;
   }
-  findNode(method: Method, path: string, constraints: Router.Constraints = {}) {
+  findNode(
+    method: Method,
+    path: string,
+    constraints: TRouter.Constraints = {},
+  ) {
     if (this.#trees[method] === undefined) {
       return null;
     }
@@ -500,7 +515,7 @@ export default class MyRouter {
       if (
         existRoute.method === method &&
         existRoute.pattern === pattern &&
-        deepEqual(routeConstraints, constraints)
+        equal(routeConstraints, constraints)
       ) {
         return {
           handler: existRoute.handler,
@@ -515,7 +530,7 @@ export default class MyRouter {
   hasConstraintStrategy(strategyName: string) {
     return this.#constrainer.hasConstraintStrategy(strategyName);
   }
-  addConstraintStrategy(strategy: Router.ConstraintStrategy) {
+  addConstraintStrategy(strategy: TRouter.ConstraintStrategy) {
     this.#constrainer.addConstraintStrategy(strategy);
     this.#rebuild(this.#routes);
   }
@@ -523,7 +538,7 @@ export default class MyRouter {
     this.#trees = {};
     this.#routes.length = 0;
   }
-  off(method: Method, path: string, constraints: Router.Constraints) {
+  off(method: Method, path: string, constraints: TRouter.Constraints) {
     // path validation
     assert(typeof path === "string", "Path should be a string");
     assert(path.length > 0, "The path could not be empty");
@@ -570,7 +585,7 @@ export default class MyRouter {
     }
   }
 
-  #off(method: Method, path: string, constraints: Router.Constraints) {
+  #off(method: Method, path: string, constraints: TRouter.Constraints) {
     // method validation
     assert(typeof method === "string", "Method should be a string");
     assert(
@@ -584,7 +599,7 @@ export default class MyRouter {
 
     function matcherWithConstraints(route: Route) {
       return matcherWithoutConstraints(route) ||
-        !deepEqual(constraints, route.opts.constraints || {});
+        !equal(constraints, route.opts.constraints || {});
     }
 
     const predicate = constraints
@@ -604,23 +619,23 @@ export default class MyRouter {
       constraints,
     );
     const ctx = new Context(req, handle?.params ?? Object.create(null));
-    return await this.callHandler(handle, ctx);
+    return await this.callHandler(ctx, handle?.handler);
   }
 
   async callHandler(
-    handle: FindResult<string> | null,
     ctx: Context,
+    handler?: Handler,
   ) {
-    if (!handle) {
-      return await this.#defaultRoute(ctx);
+    if (!handler) {
+      handler = this.#config.defaultRoute;
     }
-    return await handle.handler(ctx);
+    return await handler(ctx);
   }
 
   find(
     method: Method,
     path: string,
-    derivedConstraints: Record<string, unknown>,
+    derivedConstraints?: Record<string, unknown>,
   ) {
     let currentNode: StaticNode | ParametricNode | WildcardNode =
       this.#trees[method];
@@ -769,14 +784,6 @@ export default class MyRouter {
     }
   }
 
-  #defaultRoute(ctx: Context) {
-    const defaultRoute = this.#config.defaultRoute;
-    if (defaultRoute) {
-      return defaultRoute(ctx);
-    }
-    return new Response("404: Page Not Found", { status: 404 });
-  }
-
   #onBadUrl(_path: string) {
     const onBadUrl = this.#config.onBadUrl;
     if (!onBadUrl) {
@@ -786,9 +793,9 @@ export default class MyRouter {
       handler: onBadUrl,
       params: {},
       store: null,
-    } as unknown as FindResult<string>;
+    } as FindResult<string>;
   }
-  //   prettyPrint(options: Router.RouteOptions = {}) {
+  //   prettyPrint(options: TRouter.RouteOptions = {}) {
   //     const method = options.method;
 
   //     options.buildPrettyMeta = this.#config.buildPrettyMeta.bind(this);
@@ -806,8 +813,8 @@ export default class MyRouter {
   //         };
   //         return { ...route, method: "MERGED", opts: { constraints } };
   //       });
-  //       mergedRouter.#rebuild(mergedRoutes);
-  //       tree = mergedRouter.#trees.MERGED;
+  //       mergedTRouter.#rebuild(mergedRoutes);
+  //       tree = mergedTRouter.#trees.MERGED;
   //     } else {
   //       tree = this.#trees[method];
   //     }
@@ -815,43 +822,43 @@ export default class MyRouter {
   //     if (tree == null) return "(empty tree)";
   //     return prettyPrintTree(tree, options);
   //   }
-  get(...args: Router.OnMethodArgs) {
+  get(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Get, ...args);
   }
-  post(...args: Router.OnMethodArgs) {
+  post(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Post, ...args);
   }
-  put(...args: Router.OnMethodArgs) {
+  put(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Put, ...args);
   }
-  delete(...args: Router.OnMethodArgs) {
+  delete(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Delete, ...args);
   }
-  patch(...args: Router.OnMethodArgs) {
+  patch(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Patch, ...args);
   }
-  head(...args: Router.OnMethodArgs) {
+  head(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Head, ...args);
   }
-  options(...args: Router.OnMethodArgs) {
+  options(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Options, ...args);
   }
-  trace(...args: Router.OnMethodArgs) {
+  trace(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Trace, ...args);
   }
-  connect(...args: Router.OnMethodArgs) {
+  connect(...args: TRouter.OnMethodArgs) {
     this.on(METHOD.Connect, ...args);
   }
-  all(...args: Router.OnMethodArgs) {
+  all(...args: TRouter.OnMethodArgs) {
     this.on(HTTP_METHODS, ...args);
   }
 }
 
-// Router.prototype.all = function (path, handler, store) {
+// TRouter.prototype.all = function (path, handler, store) {
 //   this.on(httpMethods, path, handler, store);
 // };
 
-// Router.sanitizeUrlPath = function sanitizeUrlPath(url, useSemicolonDelimiter) {
+// TRouter.sanitizeUrlPath = function sanitizeUrlPath(url, useSemicolonDelimiter) {
 //   const decoded = safeDecodeURI(url, useSemicolonDelimiter);
 //   if (decoded.shouldDecodeParam) {
 //     return safeDecodeURIComponent(decoded.path);
@@ -859,5 +866,5 @@ export default class MyRouter {
 //   return decoded.path;
 // };
 
-// Router.removeDuplicateSlashes = removeDuplicateSlashes;
-// Router.trimLastSlash = trimLastSlash;
+// TRouter.removeDuplicateSlashes = removeDuplicateSlashes;
+// TRouter.trimLastSlash = trimLastSlash;

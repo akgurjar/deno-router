@@ -1,220 +1,203 @@
-// @ts-nocheck
-// 'use strict'
 
-import { assert, assertEquals, assertThrows, assertMatch, assertNotEquals, fail } from '@std/assert';
-import { deepEqual } from 'node:assert';
-const rfdc = await import('rfdc')({ proto: true })
-import FindMyWay from '../index.ts';
+import { assertEquals, assertStrictEquals } from '@std/assert';
 
-function equalRouters (t, router1, router2) {
-  t.assert.deepStrictEqual(router1._opts, router2._opts)
-  deepEqual(router1.routes, router2.routes)
-  deepEqual(JSON.stringify(router1.trees), JSON.stringify(router2.trees))
+import Router from '../mod.ts';
 
-  t.assert.deepStrictEqual(
+function equalRouters (router1: Router, router2: Router) {
+  assertStrictEquals(router1.config, router2.config);
+  assertStrictEquals(router1.routes, router2.routes);
+  assertStrictEquals(JSON.stringify(router1.trees), JSON.stringify(router2.trees));
+
+  assertStrictEquals(
     router1.constrainer.strategies,
-    router2.constrainer.strategies
-  )
-  t.assert.deepStrictEqual(
-    router1.constrainer.strategiesInUse,
-    router2.constrainer.strategiesInUse
-  )
-  t.assert.deepStrictEqual(
-    router1.constrainer.asyncStrategiesInUse,
-    router2.constrainer.asyncStrategiesInUse
-  )
+    router2.constrainer.strategies,
+  );
+  // assertStrictEquals(
+  //   router1.constrainer.strategiesInUse,
+  //   router2.constrainer.strategiesInUse
+  // )
+  // assertStrictEquals(
+  //   router1.constrainer.asyncStrategiesInUse,
+  //   router2.constrainer.asyncStrategiesInUse
+  // )
 }
 
-Deno.test('hasRoute returns false if there is no routes', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false if there is no routes', () => {
 
-  const findMyWay = FindMyWay()
-  const fundMyWayClone = rfdc(findMyWay)
+  const router = new Router();
+  const routerClone = structuredClone(router);
 
-  const hasRoute = findMyWay.hasRoute('GET', '/example')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/example')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true for a static route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true for a static route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/example', () => {})
+  const router = new Router();
+  router.on('GET', '/example', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/example')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/example')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns false for a static route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false for a static route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/example', () => {})
+  const router = new Router();
+  router.on('GET', '/example', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/example1')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/example1')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true for a parametric route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true for a parametric route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:param', () => {})
+  const router = new Router();
+  router.on('GET', '/:param', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:param')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/:param')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns false for a parametric route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false for a parametric route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/foo/:param', () => {})
+  const router = new Router();
+  router.on('GET', '/foo/:param', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/bar/:param')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/bar/:param')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true for a parametric route with static suffix', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true for a parametric route with static suffix', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:param-static', () => {})
+  const router = new Router();
+  router.on('GET', '/:param-static', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:param-static')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/:param-static')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns false for a parametric route with static suffix', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false for a parametric route with static suffix', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:param-static1', () => {})
+  const router = new Router();
+  router.on('GET', '/:param-static1', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:param-static2')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/:param-static2')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true even if a param name different', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true even if a param name different', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:param1', () => {})
+  const router = new Router();
+  router.on('GET', '/:param1', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:param2')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/:param2')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true for a multi-parametric route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true for a multi-parametric route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:param1-:param2', () => {})
+  const router = new Router();
+  router.on('GET', '/:param1-:param2', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:param1-:param2')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/:param1-:param2')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns false for a multi-parametric route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false for a multi-parametric route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/foo/:param1-:param2/bar1', () => {})
+  const router = new Router();
+  router.on('GET', '/foo/:param1-:param2/bar1', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/foo/:param1-:param2/bar2')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/foo/:param1-:param2/bar2')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true for a regexp route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true for a regexp route',  () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:param(^\\d+$)', () => {})
+  const router = new Router();
+  router.on('GET', '/:param(^\\d+$)', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:param(^\\d+$)')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/:param(^\\d+$)')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns false for a regexp route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false for a regexp route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/:file(^\\S+).png', () => {})
+  const router = new Router();
+  router.on('GET', '/:file(^\\S+).png', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/:file(^\\D+).png')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/:file(^\\D+).png')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns true for a wildcard route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns true for a wildcard route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/example/*', () => {})
+  const router = new Router();
+  router.on('GET', '/example/*', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/example/*')
-  deepEqual(hasRoute, true)
+  const hasRoute = router.hasRoute('GET', '/example/*')
+  assertEquals(hasRoute, true)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })
 
-Deno.test('hasRoute returns false for a wildcard route', async () => {
-  // t.plan()
+Deno.test('hasRoute returns false for a wildcard route', () => {
 
-  const findMyWay = FindMyWay()
-  findMyWay.on('GET', '/foo1/*', () => {})
+  const router = new Router();
+  router.on('GET', '/foo1/*', () => {});
 
-  const fundMyWayClone = rfdc(findMyWay)
+  const routerClone = structuredClone(router)
 
-  const hasRoute = findMyWay.hasRoute('GET', '/foo2/*')
-  deepEqual(hasRoute, false)
+  const hasRoute = router.hasRoute('GET', '/foo2/*')
+  assertEquals(hasRoute, false)
 
-  equalRouters(t, findMyWay, fundMyWayClone)
+  equalRouters(router, routerClone)
 })

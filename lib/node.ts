@@ -10,7 +10,7 @@ export const NODE_TYPES = {
   WILDCARD: 2,
 };
 
-export type Handler = (context: Context) => Response | Promise<Response>;
+export type Handler = (ctx: Context) => Response | void | Promise<Response | void>;
 
 export interface Route {
   method: Method;

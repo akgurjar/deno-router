@@ -1,17 +1,14 @@
-// @ts-nocheck
-// 'use strict'
 
-import { assert, assertEquals, assertThrows, assertMatch, assertNotEquals, fail } from '@std/assert';
-import FindMyWay from '../index.ts';
+import { assert } from '@std/assert';
+import Router from '../mod.ts';
 
-Deno.test('find calls can pass no constraints', async () => {
-  // t.plan()
-  const findMyWay = FindMyWay()
+Deno.test('find calls can pass no constraints', () => {
+  const router = new Router()
 
-  findMyWay.on('GET', '/a', () => {})
-  findMyWay.on('GET', '/a/b', () => {})
+  router.on('GET', '/a', () => {})
+  router.on('GET', '/a/b', () => {})
 
-  assert(findMyWay.find('GET', '/a'))
-  assert(findMyWay.find('GET', '/a/b'))
-  assert(!findMyWay.find('GET', '/a/b/c'))
+  assert(router.find('GET', '/a'))
+  assert(router.find('GET', '/a/b'))
+  assert(!router.find('GET', '/a/b/c'))
 })

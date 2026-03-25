@@ -13,8 +13,9 @@ router.on("GET" as Method, "/test/:id/greet", { auth: true }, (ctx) => {
   return ctx.json({ hello: ctx.params.id });
 });
 
-const server = Deno.serve({ port: 3000 }, (req) => {
-  return router.lookup(req);
+const server = Deno.serve({ port: 3000 }, async (req) => {
+  const res = await router.lookup(req);
+  return res ?? new Response("Not Found", { status: 204 });
 });
 
 await server.finished;

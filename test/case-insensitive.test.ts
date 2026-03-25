@@ -1,232 +1,198 @@
-// @ts-nocheck
-// 'use strict'
+import { assert, fail } from "@std/assert";
+import Router from "../mod.ts";
 
-import { assert, assertEquals, assertThrows, assertMatch, assertNotEquals, fail } from '@std/assert';
-import { deepEqual } from 'node:assert';
-import FindMyWay from '../index.ts';
-
-Deno.test('case insensitive static routes of level 1', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("case insensitive static routes of level 1", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/woo", () => {});
+  await router.lookup(new Request("http://example.com/WOO"));
+});
 
-  findMyWay.on('GET', '/woo', (req, res, params) => {
-    assert('we should be here')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/WOO', headers: {} }, null)
-})
-
-Deno.test('case insensitive static routes of level 2', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("case insensitive static routes of level 2", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/woo", () => {});
+  await router.lookup(new Request("http://example.com/FoO/WOO"));
+});
 
-  findMyWay.on('GET', '/foo/woo', (req, res, params) => {
-    assert('we should be here')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/FoO/WOO', headers: {} }, null)
-})
-
-Deno.test('case insensitive static routes of level 3', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("case insensitive static routes of level 3", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/bar/woo", () => {});
+  await router.lookup(new Request("http://example.com/Foo/bAR/WoO"));
+});
 
-  findMyWay.on('GET', '/foo/bar/woo', (req, res, params) => {
-    assert('we should be here')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/Foo/bAR/WoO', headers: {} }, null)
-})
-
-Deno.test('parametric case insensitive', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("parametric case insensitive", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/:param", (ctx) => {
+    assert(ctx.params.param === "bAR");
+  });
+  await router.lookup(new Request("http://example.com/Foo/bAR"));
+});
 
-  findMyWay.on('GET', '/foo/:param', (req, res, params) => {
-    deepEqual(params.param, 'bAR')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/Foo/bAR', headers: {} }, null)
-})
-
-Deno.test('parametric case insensitive with a static part', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("parametric case insensitive with a static part", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/my-:param", (ctx) => {
+    assert(ctx.params.param === "bAR");
+  });
+  await router.lookup(new Request("http://example.com//Foo/MY-bAR"));
+});
 
-  findMyWay.on('GET', '/foo/my-:param', (req, res, params) => {
-    deepEqual(params.param, 'bAR')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/Foo/MY-bAR', headers: {} }, null)
-})
-
-Deno.test('parametric case insensitive with capital letter', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("parametric case insensitive with capital letter", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/:Param", (ctx) => {
+    assert(ctx.params.Param === "bAR");
+  });
+  await router.lookup(new Request("http://example.com/Foo/bAR"));
+});
 
-  findMyWay.on('GET', '/foo/:Param', (req, res, params) => {
-    deepEqual(params.Param, 'bAR')
-  })
+Deno.test(
+  "case insensitive with capital letter in static path with param",
+  async () => {
+    const router = new Router({
+      caseSensitive: false,
+      defaultRoute: () => {
+        fail("The default route should not have been executed");
+      },
+    });
+    router.on("GET", "/Foo/bar/:param", (ctx) => {
+      assert(ctx.params.param === "baZ");
+    });
+    await router.lookup(new Request("http://example.com/foo/bar/baZ"));
+  },
+);
 
-  findMyWay.lookup({ method: 'GET', url: '/Foo/bAR', headers: {} }, null)
-})
+Deno.test(
+  "case insensitive with multiple paths containing capital letter in static path with param",
+  async () => {
+    /*
+     * This is a reproduction of the issue documented at
+     * https://github.com/delvedor/find-my-way/issues/96.
+     */
+    const router = new Router({
+      caseSensitive: false,
+      defaultRoute: () => {
+        fail("The default route should not have been executed");
+      },
+    });
+    router.on("GET", "/Foo/bar/:param", (ctx) => {
+      assert(ctx.params.param === "baZ");
+    });
+    router.on("GET", "/Foo/baz/:param", (ctx) => {
+      assert(ctx.params.param === "baR");
+    });
+    await Promise.all([
+      router.lookup(new Request("http://example.com/foo/bar/baZ")),
+      router.lookup(new Request("http://example.com/foo/baz/baR")),
+    ]);
+  },
+);
 
-Deno.test('case insensitive with capital letter in static path with param', async () => {
-  // t.plan()
+Deno.test(
+  "case insensitive with multiple mixed-case params within same slash couple",
+  async () => {
+    const router = new Router({
+      caseSensitive: false,
+      defaultRoute: () => {
+        fail("The default route should not have been executed");
+      },
+    });
+    router.on("GET", "/foo/:param1-:param2", (ctx) => {
+      assert(ctx.params.param1 === "My");
+      assert(ctx.params.param2 === "bAR");
+    });
+    await router.lookup(new Request("http://example.com/FOO/My-bAR"));
+  },
+);
 
-  const findMyWay = FindMyWay({
+Deno.test("case insensitive with multiple mixed-case params", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/:param1/:param2", (ctx) => {
+    assert(ctx.params.param1 === "My");
+    assert(ctx.params.param2 === "bAR");
+  });
+  await router.lookup(new Request("http://example.com/FOO/My/bAR"));
+});
 
-  findMyWay.on('GET', '/Foo/bar/:param', (req, res, params) => {
-    deepEqual(params.param, 'baZ')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/foo/bar/baZ', headers: {} }, null)
-})
-
-Deno.test('case insensitive with multiple paths containing capital letter in static path with param', async () => {
-  /*
-   * This is a reproduction of the issue documented at
-   * https://github.com/delvedor/find-my-way/issues/96.
-   */
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("case insensitive with wildcard", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("GET", "/foo/*", (ctx) => {
+    assert(ctx.params["*"] === "baR");
+  });
+  await router.lookup(new Request("http://example.com/FOO/baR"));
+});
 
-  findMyWay.on('GET', '/Foo/bar/:param', (req, res, params) => {
-    deepEqual(params.param, 'baZ')
-  })
-
-  findMyWay.on('GET', '/Foo/baz/:param', (req, res, params) => {
-    deepEqual(params.param, 'baR')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/foo/bar/baZ', headers: {} }, null)
-  findMyWay.lookup({ method: 'GET', url: '/foo/baz/baR', headers: {} }, null)
-})
-
-Deno.test('case insensitive with multiple mixed-case params within same slash couple', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
+Deno.test("parametric case insensitive with multiple routes", async () => {
+  const router = new Router({
     caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
-
-  findMyWay.on('GET', '/foo/:param1-:param2', (req, res, params) => {
-    deepEqual(params.param1, 'My')
-    deepEqual(params.param2, 'bAR')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/FOO/My-bAR', headers: {} }, null)
-})
-
-Deno.test('case insensitive with multiple mixed-case params', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
-    caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
-
-  findMyWay.on('GET', '/foo/:param1/:param2', (req, res, params) => {
-    deepEqual(params.param1, 'My')
-    deepEqual(params.param2, 'bAR')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/FOO/My/bAR', headers: {} }, null)
-})
-
-Deno.test('case insensitive with wildcard', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
-    caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
-
-  findMyWay.on('GET', '/foo/*', (req, res, params) => {
-    deepEqual(params['*'], 'baR')
-  })
-
-  findMyWay.lookup({ method: 'GET', url: '/FOO/baR', headers: {} }, null)
-})
-
-Deno.test('parametric case insensitive with multiple routes', async () => {
-  // t.plan()
-
-  const findMyWay = FindMyWay({
-    caseSensitive: false,
-    defaultRoute: (req, res) => {
-      fail('Should not be defaultRoute')
-    }
-  })
-
-  findMyWay.on('POST', '/foo/:param/Static/:userId/Save', (req, res, params) => {
-    deepEqual(params.param, 'bAR')
-    deepEqual(params.userId, 'one')
-  })
-  findMyWay.on('POST', '/foo/:param/Static/:userId/Update', (req, res, params) => {
-    deepEqual(params.param, 'Bar')
-    deepEqual(params.userId, 'two')
-  })
-  findMyWay.on('POST', '/foo/:param/Static/:userId/CANCEL', (req, res, params) => {
-    deepEqual(params.param, 'bAR')
-    deepEqual(params.userId, 'THREE')
-  })
-
-  findMyWay.lookup({ method: 'POST', url: '/foo/bAR/static/one/SAVE', headers: {} }, null)
-  findMyWay.lookup({ method: 'POST', url: '/fOO/Bar/Static/two/update', headers: {} }, null)
-  findMyWay.lookup({ method: 'POST', url: '/Foo/bAR/STATIC/THREE/cAnCeL', headers: {} }, null)
-})
+    defaultRoute: () => {
+      fail("The default route should not have been executed");
+    },
+  });
+  router.on("POST", "/foo/:param/Static/:userId/Save", (ctx) => {
+    assert(ctx.params.param === "bAR");
+    assert(ctx.params.userId === "one");
+  });
+  router.on("POST", "/foo/:param/Static/:userId/Update", (ctx) => {
+    assert(ctx.params.param === "Bar");
+    assert(ctx.params.userId === "two");
+  });
+  router.on("POST", "/foo/:param/Static/:userId/CANCEL", (ctx) => {
+    assert(ctx.params.param === "bAR");
+    assert(ctx.params.userId === "THREE");
+  });
+  await Promise.all([
+    router.lookup(
+      new Request("http://example.com/foo/bAR/static/one/SAVE", {
+        method: "POST",
+      }),
+    ),
+    router.lookup(
+      new Request("http://example.com/fOO/Bar/Static/two/update", {
+        method: "POST",
+      }),
+    ),
+    router.lookup(
+      new Request("http://example.com/Foo/bAR/STATIC/THREE/cAnCeL", {
+        method: "POST",
+      }),
+    ),
+  ]);
+});
